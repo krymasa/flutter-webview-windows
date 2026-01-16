@@ -344,14 +344,29 @@ void Webview::RegisterEventHandlers() {
       Callback<ICoreWebView2NewWindowRequestedEventHandler>(
           [this](ICoreWebView2* sender,
                  ICoreWebView2NewWindowRequestedEventArgs* args) -> HRESULT {
-            switch (popup_window_policy_) {
-              case WebviewPopupWindowPolicy::Deny:
-                args->put_Handled(TRUE);
-                break;
-              case WebviewPopupWindowPolicy::ShowInSameWindow:
-                args->put_NewWindow(webview_.get());
-                args->put_Handled(TRUE);
-                break;
+            if (!new_window_requested_callback_) {
+              return S_OK;
+            }
+
+            wil::unique_cotaskmem_string wuri;
+            if (args->get_Uri(&wuri) == S_OK) {
+              wil::com_ptr<ICoreWebView2Deferral> deferral;
+              args->GetDeferral(deferral.put());
+
+              const std::string uri = util::Utf8FromUtf16(wuri.get());
+              new_window_requested_callback_(
+                  uri,
+                  [deferral = std::move(deferral),
+                   args = std::move(args)](WebviewPopupWindowPolicy policy) {
+                    if (policy == WebviewPopupWindowPolicy::Deny) {
+                      args->put_Handled(TRUE);
+                    } else if (policy == WebviewPopupWindowPolicy::ShowInSameWindow) {
+                      args->put_NewWindow(nullptr);
+                      args->put_Handled(TRUE);
+                    }
+                    // Allow: do nothing, let the default behavior happen
+                    deferral->Complete();
+                  });
             }
 
             return S_OK;
@@ -479,10 +494,6 @@ bool Webview::SetCacheDisabled(bool disabled) {
   return webview_->CallDevToolsProtocolMethod(L"Network.setCacheDisabled",
                                               util::Utf16FromUtf8(json).c_str(),
                                               nullptr) == S_OK;
-}
-
-void Webview::SetPopupWindowPolicy(WebviewPopupWindowPolicy policy) {
-  popup_window_policy_ = policy;
 }
 
 bool Webview::SetUserAgent(const std::string& user_agent) {

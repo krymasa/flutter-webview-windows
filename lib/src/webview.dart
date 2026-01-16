@@ -502,17 +502,6 @@ class WebviewController extends ValueNotifier<WebviewValue> {
     return _methodChannel.invokeMethod('setZoomFactor', zoomFactor);
   }
 
-  /// Sets the [WebviewPopupWindowPolicy].
-  Future<void> setPopupWindowPolicy(
-      WebviewPopupWindowPolicy popupPolicy) async {
-    if (_isDisposed) {
-      return;
-    }
-    assert(value.isInitialized);
-    return _methodChannel.invokeMethod(
-        'setPopupWindowPolicy', popupPolicy.index);
-  }
-
   /// Suspends the web view.
   Future<void> suspend() async {
     if (_isDisposed) {

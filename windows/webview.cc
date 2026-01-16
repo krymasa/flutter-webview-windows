@@ -252,6 +252,30 @@ void Webview::RegisterEventHandlers() {
           .Get(),
       &event_registrations_.document_title_changed_token_);
 
+  wil::com_ptr<ICoreWebView2_15> webview15 = webview_.query<ICoreWebView2_15>();
+  if (webview15) {
+    webview15->add_FaviconChanged(
+        Callback<ICoreWebView2FaviconChangedEventHandler>(
+            [this](ICoreWebView2* sender, IUnknown* args) -> HRESULT {
+              wil::com_ptr<ICoreWebView2_15> sender15 =
+                  wil::com_ptr<ICoreWebView2>(sender).query<ICoreWebView2_15>();
+
+              if (favicon_changed_callback_ && sender15) {
+                LPWSTR wfavicon = nullptr;
+                if (SUCCEEDED(sender15->get_FaviconUri(&wfavicon)) &&
+                    wfavicon) {
+                  std::string favicon = util::Utf8FromUtf16(wfavicon);
+                  favicon_changed_callback_(favicon);
+                  CoTaskMemFree(wfavicon);
+                }
+              }
+
+              return S_OK;
+            })
+            .Get(),
+        &event_registrations_.favicon_changed_token_);
+  }
+
   composition_controller_->add_CursorChanged(
       Callback<ICoreWebView2CursorChangedEventHandler>(
           [this](ICoreWebView2CompositionController* sender,
@@ -389,10 +413,14 @@ void Webview::RegisterEventHandlers() {
                 window_features->get_HasSize(&has_size);
                 window_features->get_Left(&left);
                 window_features->get_Top(&top);
-                window_features->get_ShouldDisplayMenuBar(&should_display_menu_bar);
-                window_features->get_ShouldDisplayStatus(&should_display_status);
-                window_features->get_ShouldDisplayToolbar(&should_display_toolbar);
-                window_features->get_ShouldDisplayScrollBars(&should_display_scroll_bars);
+                window_features->get_ShouldDisplayMenuBar(
+                    &should_display_menu_bar);
+                window_features->get_ShouldDisplayStatus(
+                    &should_display_status);
+                window_features->get_ShouldDisplayToolbar(
+                    &should_display_toolbar);
+                window_features->get_ShouldDisplayScrollBars(
+                    &should_display_scroll_bars);
 
                 request_args.window_features.height = height;
                 request_args.window_features.width = width;
@@ -400,10 +428,14 @@ void Webview::RegisterEventHandlers() {
                 request_args.window_features.hasSize = has_size;
                 request_args.window_features.left = left;
                 request_args.window_features.top = top;
-                request_args.window_features.shouldDisplayMenuBar = should_display_menu_bar;
-                request_args.window_features.shouldDisplayStatus = should_display_status;
-                request_args.window_features.shouldDisplayToolbar = should_display_toolbar;
-                request_args.window_features.shouldDisplayScrollBars = should_display_scroll_bars;
+                request_args.window_features.shouldDisplayMenuBar =
+                    should_display_menu_bar;
+                request_args.window_features.shouldDisplayStatus =
+                    should_display_status;
+                request_args.window_features.shouldDisplayToolbar =
+                    should_display_toolbar;
+                request_args.window_features.shouldDisplayScrollBars =
+                    should_display_scroll_bars;
               }
 
               new_window_requested_callback_(
@@ -412,7 +444,8 @@ void Webview::RegisterEventHandlers() {
                    args = std::move(args)](WebviewPopupWindowPolicy policy) {
                     if (policy == WebviewPopupWindowPolicy::Deny) {
                       args->put_Handled(TRUE);
-                    } else if (policy == WebviewPopupWindowPolicy::ShowInSameWindow) {
+                    } else if (policy ==
+                               WebviewPopupWindowPolicy::ShowInSameWindow) {
                       args->put_NewWindow(nullptr);
                       args->put_Handled(TRUE);
                     }

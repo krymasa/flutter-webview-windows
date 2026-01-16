@@ -4,6 +4,7 @@
 #include <flutter/method_result_functions.h>
 
 #include <format>
+#include <string>
 
 #include "texture_bridge_gpu.h"
 #include "webview.h"
@@ -280,6 +281,15 @@ void WebviewBridge::RegisterEventHandlers() {
         {flutter::EncodableValue(kEventType),
          flutter::EncodableValue("titleChanged")},
         {flutter::EncodableValue(kEventValue), flutter::EncodableValue(title)},
+    });
+    EmitEvent(event);
+  });
+
+  webview_->OnFaviconChanged([this](const std::string& favicon) {
+    const auto event = flutter::EncodableValue(flutter::EncodableMap{
+      {flutter::EncodableValue(kEventType),
+       flutter::EncodableValue("faviconChanged")},
+      {flutter::EncodableValue(kEventValue), flutter::EncodableValue(favicon)},
     });
     EmitEvent(event);
   });

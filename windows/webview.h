@@ -113,6 +113,7 @@ struct EventRegistrations {
   EventRegistrationToken navigation_completed_token_{};
   EventRegistrationToken history_changed_token_{};
   EventRegistrationToken document_title_changed_token_{};
+  EventRegistrationToken favicon_changed_token_{};
   EventRegistrationToken cursor_changed_token_{};
   EventRegistrationToken got_focus_token_{};
   EventRegistrationToken lost_focus_token_{};
@@ -137,6 +138,7 @@ class Webview {
   typedef std::function<void(WebviewHistoryChanged)> HistoryChangedCallback;
   typedef std::function<void(const std::string&)> DevtoolsProtocolEventCallback;
   typedef std::function<void(const std::string&)> DocumentTitleChangedCallback;
+  typedef std::function<void(const std::string&)> FaviconChangedCallback;
   typedef std::function<void(size_t width, size_t height)>
       SurfaceSizeChangedCallback;
   typedef std::function<void(const HCURSOR)> CursorChangedCallback;
@@ -151,9 +153,11 @@ class Webview {
                              bool is_user_initiated,
                              WebviewPermissionRequestedCompleter completer)>
       PermissionRequestedCallback;
-  typedef std::function<void(WebviewPopupWindowPolicy policy)> 
+  typedef std::function<void(WebviewPopupWindowPolicy policy)>
       WebviewNewWindowRequestedCompleter;
-  typedef std::function<void(const WebviewNewWindowRequestedArgs& args, WebviewNewWindowRequestedCompleter completer)> NewWindowRequestedCallback;
+  typedef std::function<void(const WebviewNewWindowRequestedArgs& args,
+                             WebviewNewWindowRequestedCompleter completer)>
+      NewWindowRequestedCallback;
   typedef std::function<void(bool contains_fullscreen_element)>
       ContainsFullScreenElementChangedCallback;
   typedef std::function<void(WebviewDownloadEvent)> DownloadEventCallback;
@@ -230,6 +234,10 @@ class Webview {
     document_title_changed_callback_ = std::move(callback);
   }
 
+  void OnFaviconChanged(FaviconChangedCallback callback) {
+    favicon_changed_callback_ = std::move(callback);
+  }
+
   void OnCursorChanged(CursorChangedCallback callback) {
     cursor_changed_callback_ = std::move(callback);
   }
@@ -286,6 +294,7 @@ class Webview {
   OnLoadErrorCallback on_load_error_callback_;
   HistoryChangedCallback history_changed_callback_;
   DocumentTitleChangedCallback document_title_changed_callback_;
+  FaviconChangedCallback favicon_changed_callback_;
   SurfaceSizeChangedCallback surface_size_changed_callback_;
   CursorChangedCallback cursor_changed_callback_;
   FocusChangedCallback focus_changed_callback_;

@@ -53,6 +53,10 @@ class _ExampleBrowser extends State<ExampleBrowser> {
         _textController.text = url;
       }));
 
+      _subscriptions.add(_controller.favicon.listen((favicon) {
+        print(favicon);
+      }));
+
       _subscriptions
           .add(_controller.containsFullScreenElementChanged.listen((flag) {
         debugPrint('Contains fullscreen element: $flag');

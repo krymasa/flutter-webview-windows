@@ -204,6 +204,11 @@ class WebviewController extends ValueNotifier<WebviewValue> {
   /// A stream reflecting the current document title.
   Stream<String> get title => _titleStreamController.stream;
 
+  final StreamController<String> _faviconStreamController =
+      StreamController<String>();
+
+  Stream<String> get favicon => _faviconStreamController.stream;
+
   final StreamController<SystemMouseCursor> _cursorStreamController =
       StreamController<SystemMouseCursor>.broadcast();
 
@@ -273,6 +278,9 @@ class WebviewController extends ValueNotifier<WebviewValue> {
             break;
           case 'titleChanged':
             _titleStreamController.add(map['value']);
+            break;
+          case 'faviconChanged':
+            _faviconStreamController.add(map['value']);
             break;
           case 'cursorChanged':
             _cursorStreamController.add(getCursorByName(map['value']));

@@ -313,8 +313,8 @@ void WebviewBridge::RegisterEventHandlers() {
       });
 
   webview_->OnNewWindowRequested(
-    [this](const std::string& url, Webview::WebviewNewWindowRequestedCompleter completer) {
-      OnNewWindowRequested(url, completer);
+    [this](const WebviewNewWindowRequestedArgs& args, Webview::WebviewNewWindowRequestedCompleter completer) {
+      OnNewWindowRequested(args, completer);
     }
   );
 
@@ -359,14 +359,28 @@ void WebviewBridge::OnPermissionRequested(
 }
 
 void WebviewBridge::OnNewWindowRequested(
-    const std::string& url, 
+    const WebviewNewWindowRequestedArgs& args, 
     Webview::WebviewNewWindowRequestedCompleter completer) {
-  auto args = std::make_unique<flutter::EncodableValue>(flutter::EncodableMap{
-    {"url", url},
+  auto encodable_args = std::make_unique<flutter::EncodableValue>(flutter::EncodableMap{
+    {"uri", args.uri},
+    {"isUserInitiated", static_cast<bool>(args.is_user_initiated)},
+    // {"name", args.name},
+    {"windowFeatures", flutter::EncodableMap{
+      {"height", static_cast<int32_t>(args.window_features.height)},
+      {"width", static_cast<int32_t>(args.window_features.width)},
+      {"hasPosition", static_cast<bool>(args.window_features.hasPosition)},
+      {"hasSize", static_cast<bool>(args.window_features.hasSize)},
+      {"left", static_cast<int32_t>(args.window_features.left)},
+      {"top", static_cast<int32_t>(args.window_features.top)},
+      {"shouldDisplayMenuBar", static_cast<bool>(args.window_features.shouldDisplayMenuBar)},
+      {"shouldDisplayStatus", static_cast<bool>(args.window_features.shouldDisplayStatus)},
+      {"shouldDisplayToolbar", static_cast<bool>(args.window_features.shouldDisplayToolbar)},
+      {"shouldDisplayScrollBars", static_cast<bool>(args.window_features.shouldDisplayScrollBars)},
+    }},
   });
   
   method_channel_->InvokeMethod(
-    "newWindowRequested", std::move(args),
+    "newWindowRequested", std::move(encodable_args),
     std::make_unique<flutter::MethodResultFunctions<flutter::EncodableValue>>(
       [completer](const flutter::EncodableValue* result) {
         auto policy = std::get_if<int>(result);

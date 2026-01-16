@@ -51,6 +51,26 @@ struct WebviewDownloadEvent {
   INT64 totalBytesToReceive;
 };
 
+struct WebviewWindowFeatures {
+  UINT32 height;
+  UINT32 width;
+  BOOL hasPosition;
+  BOOL hasSize;
+  UINT32 left;
+  UINT32 top;
+  BOOL shouldDisplayMenuBar;
+  BOOL shouldDisplayStatus;
+  BOOL shouldDisplayToolbar;
+  BOOL shouldDisplayScrollBars;
+};
+
+struct WebviewNewWindowRequestedArgs {
+  std::string uri;
+  BOOL is_user_initiated;
+  // std::string name;
+  WebviewWindowFeatures window_features;
+};
+
 struct VirtualKeyState {
  public:
   inline void set_isLeftButtonDown(bool is_down) {
@@ -133,7 +153,7 @@ class Webview {
       PermissionRequestedCallback;
   typedef std::function<void(WebviewPopupWindowPolicy policy)> 
       WebviewNewWindowRequestedCompleter;
-  typedef std::function<void(const std::string& url, WebviewNewWindowRequestedCompleter completer)> NewWindowRequestedCallback;
+  typedef std::function<void(const WebviewNewWindowRequestedArgs& args, WebviewNewWindowRequestedCompleter completer)> NewWindowRequestedCallback;
   typedef std::function<void(bool contains_fullscreen_element)>
       ContainsFullScreenElementChangedCallback;
   typedef std::function<void(WebviewDownloadEvent)> DownloadEventCallback;

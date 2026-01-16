@@ -31,12 +31,50 @@ class WebviewDownloadEvent {
   );
 }
 
+class WebviewWindowFeatures {
+  final int height;
+  final int width;
+  final bool hasPosition;
+  final bool hasSize;
+  final int left;
+  final int top;
+  final bool shouldDisplayMenuBar;
+  final bool shouldDisplayStatus;
+  final bool shouldDisplayToolbar;
+  final bool shouldDisplayScrollBars;
+  const WebviewWindowFeatures(
+    this.height,
+    this.width,
+    this.hasPosition,
+    this.hasSize,
+    this.left,
+    this.top,
+    this.shouldDisplayMenuBar,
+    this.shouldDisplayStatus,
+    this.shouldDisplayToolbar,
+    this.shouldDisplayScrollBars,
+  );
+}
+
+class WebviewNewWindowRequestedArgs {
+  final String uri;
+  final bool isUserInitiated;
+  // final String name;
+  final WebviewWindowFeatures windowFeatures;
+  const WebviewNewWindowRequestedArgs(
+    this.uri,
+    this.isUserInitiated,
+    // this.name,
+    this.windowFeatures,
+  );
+}
+
 typedef PermissionRequestedDelegate
     = FutureOr<WebviewPermissionDecision> Function(
         String url, WebviewPermissionKind permissionKind, bool isUserInitiated);
 
 typedef NewWindowRequestedDelegate = FutureOr<WebviewPopupWindowPolicy>
-    Function(String url);
+    Function(WebviewNewWindowRequestedArgs args);
 
 typedef ScriptID = String;
 
@@ -307,10 +345,39 @@ class WebviewController extends ValueNotifier<WebviewValue> {
       return WebviewPopupWindowPolicy.allow.index;
     }
 
-    final url = args['url'] as String?;
+    final uri = args['uri'] as String?;
+    final isUserInitiated = args['isUserInitiated'] as bool? ?? false;
+    // final name = args['name'] as String? ?? '';
+    final windowFeaturesMap = args['windowFeatures'] as Map<dynamic, dynamic>?;
 
-    if (url != null) {
-      final decision = await _newWindowRequested!(url);
+    if (uri != null) {
+      WebviewWindowFeatures? windowFeatures;
+      if (windowFeaturesMap != null) {
+        windowFeatures = WebviewWindowFeatures(
+          windowFeaturesMap['height'] as int? ?? 0,
+          windowFeaturesMap['width'] as int? ?? 0,
+          windowFeaturesMap['hasPosition'] as bool? ?? false,
+          windowFeaturesMap['hasSize'] as bool? ?? false,
+          windowFeaturesMap['left'] as int? ?? 0,
+          windowFeaturesMap['top'] as int? ?? 0,
+          windowFeaturesMap['shouldDisplayMenuBar'] as bool? ?? false,
+          windowFeaturesMap['shouldDisplayStatus'] as bool? ?? false,
+          windowFeaturesMap['shouldDisplayToolbar'] as bool? ?? false,
+          windowFeaturesMap['shouldDisplayScrollBars'] as bool? ?? false,
+        );
+      } else {
+        windowFeatures = const WebviewWindowFeatures(
+            0, 0, false, false, 0, 0, false, false, false, false);
+      }
+
+      final requestArgs = WebviewNewWindowRequestedArgs(
+        uri,
+        isUserInitiated,
+        // name,
+        windowFeatures,
+      );
+
+      final decision = await _newWindowRequested!(requestArgs);
       return decision.index;
     }
 

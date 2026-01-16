@@ -147,7 +147,8 @@ class _ExampleBrowser extends State<ExampleBrowser> {
                       children: [
                         Webview(_controller,
                             permissionRequested: _onPermissionRequested,
-                            newWindowRequested: (url) {
+                            newWindowRequested: (details) {
+                          print(details.toString());
                           return WebviewPopupWindowPolicy.deny;
                         }),
                         StreamBuilder<LoadingState>(

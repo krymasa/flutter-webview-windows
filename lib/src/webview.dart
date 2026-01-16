@@ -35,6 +35,9 @@ typedef PermissionRequestedDelegate
     = FutureOr<WebviewPermissionDecision> Function(
         String url, WebviewPermissionKind permissionKind, bool isUserInitiated);
 
+typedef NewWindowRequestedDelegate = FutureOr<WebviewPopupWindowPolicy>
+    Function(String url);
+
 typedef ScriptID = String;
 
 /// Attempts to translate a button constant such as [kPrimaryMouseButton]
@@ -113,6 +116,7 @@ class WebviewController extends ValueNotifier<WebviewValue> {
   Future<void> get ready => _creatingCompleter.future;
 
   PermissionRequestedDelegate? _permissionRequested;
+  NewWindowRequestedDelegate? _newWindowRequested;
 
   late MethodChannel _methodChannel;
   late EventChannel _eventChannel;
@@ -255,6 +259,10 @@ class WebviewController extends ValueNotifier<WebviewValue> {
               call.arguments as Map<dynamic, dynamic>);
         }
 
+        if (call.method == 'newWindowRequested') {
+          return _onNewWindowRequested(call.arguments as Map<dynamic, dynamic>);
+        }
+
         throw MissingPluginException('Unknown method ${call.method}');
       });
 
@@ -292,6 +300,21 @@ class WebviewController extends ValueNotifier<WebviewValue> {
     }
 
     return null;
+  }
+
+  Future<int> _onNewWindowRequested(Map<dynamic, dynamic> args) async {
+    if (_newWindowRequested == null) {
+      return WebviewPopupWindowPolicy.allow.index;
+    }
+
+    final url = args['url'] as String?;
+
+    if (url != null) {
+      final decision = await _newWindowRequested!(url);
+      return decision.index;
+    }
+
+    return WebviewPopupWindowPolicy.allow.index;
   }
 
   @override
@@ -598,6 +621,7 @@ class WebviewController extends ValueNotifier<WebviewValue> {
 class Webview extends StatefulWidget {
   final WebviewController controller;
   final PermissionRequestedDelegate? permissionRequested;
+  final NewWindowRequestedDelegate? newWindowRequested;
   final double? width;
   final double? height;
 
@@ -617,6 +641,7 @@ class Webview extends StatefulWidget {
       {this.width,
       this.height,
       this.permissionRequested,
+      this.newWindowRequested,
       this.scaleFactor,
       this.filterQuality = FilterQuality.none});
 
@@ -643,6 +668,7 @@ class _WebviewState extends State<Webview> {
     // TODO: Refactor callback and event handling and
     // remove this line
     _controller._permissionRequested = widget.permissionRequested;
+    _controller._newWindowRequested = widget.newWindowRequested;
 
     // Report initial surface size
     WidgetsBinding.instance.addPostFrameCallback((_) => _reportSurfaceSize());
